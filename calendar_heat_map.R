@@ -24,6 +24,13 @@ homicides <- all_crimes %>% filter(Description == "HOMICIDE")
 labels <- c(Homicide = "Homicides", Shooting = "Non-Fatal Shootings")
 
 ###############################################################################
+# Some basic numbers
+hom_rate <- 342 /(614664/100000)
+hom_rate
+
+342/6.14664
+
+###############################################################################
 
 # Create the counts column for each day
 homicides <- homicides %>%
@@ -84,6 +91,8 @@ shootings2 <- group_by(shootings2, dow, months, type)
 shootings2 <- dplyr::summarize(shootings2, Value=n())
 
 crimes2 <- rbind(homicides2, shootings2)
+month_levels <- c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+crimes2$months <- factor(crimes2$months, levels = month_levels)
 
 # Make the Heat Map
 heatmap2 <- ggplot(crimes2,aes(x=months, y=dow, fill=Value)) + 
@@ -104,7 +113,7 @@ heatmap2 <- ggplot(crimes2,aes(x=months, y=dow, fill=Value)) +
     legend.text=element_text(size=6),
     legend.position="right") +
   geom_text(data = crimes2, aes(months,dow,label=Value),colour="black",size=2.5) +
-  facet_grid(~type, labeller = labeller(type = labels) )
+  facet_grid(~type, labeller = labeller(type = labels))
 
 ###############################################################################
 
