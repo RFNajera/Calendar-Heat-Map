@@ -211,19 +211,21 @@ plot4 <- ggplot(data = crimes4, aes(x = factor(weeks), y = Value, fill = Value))
   ) +
   facet_grid(type ~ ., labeller=labeller(type = labels))
 
-plot4
-
-
 ###############################################################################
 
 plot4
+ggsave("img/plot4.png")
 
 heatmap4 # Year, Week
+ggsave("img/heatmap4.png")
 
-heatmap3 # Year, Day
+heatmap3 # Year, 
+ggsave("img/heatmap3.png")
 
 heatmap2 # Year, Month, Day
+ggsave("img/heatmap2.png")
 
 heatmap # Year, Month, Week, Day
+ggsave("img/heatmap.png")
 
 
