@@ -17,9 +17,11 @@ library(dplyr)
 library(plyr)
 
 # Bring in the data
-all_crimes <- read.csv("data/2016_crimes.csv")
+all_crimes <- read.csv("data/2017_crimes.csv")
 shootings <- all_crimes %>% filter(Description == "SHOOTING")
 homicides <- all_crimes %>% filter(Description == "HOMICIDE")
+
+labels <- c(Homicide = "Homicides", Shooting = "Non-Fatal Shootings")
 
 ###############################################################################
 
@@ -39,7 +41,7 @@ crimes <- rbind(shootings, homicides)
 
 # Clean up the data
 crimes$CrimeDate <-  as.Date(crimes$CrimeDate, format="%m/%d/%Y")
-crimes$year <- year(crimes$CrimeDate)
+crimes$years <- as.factor(year(crimes$CrimeDate))
 crimes$dow = wday(crimes$CrimeDate,label=TRUE) 
 crimes$dow = with(crimes, factor(dow, levels = rev(levels(dow)))) 
 crimes$week = week(crimes$CrimeDate) 
@@ -68,9 +70,7 @@ geom_tile(colour="blue",size=.1) +
     legend.text=element_text(size=6),
     legend.position="right") +
   geom_text(data = crimes, aes(weekStart,dow,label=Value,fontface="bold"),colour="black",size=2.5) +
-  facet_wrap(~type,nrow =2 )
-
-heatmap
+  facet_grid(~type, labeller = labeller(type = labels) )
 
 ###############################################################################
 
@@ -104,13 +104,11 @@ heatmap2 <- ggplot(crimes2,aes(x=months, y=dow, fill=Value)) +
     legend.text=element_text(size=6),
     legend.position="right") +
   geom_text(data = crimes2, aes(months,dow,label=Value),colour="black",size=2.5) +
-  facet_wrap(~type,nrow =2 )
-
-heatmap2
+  facet_grid(~type, labeller = labeller(type = labels) )
 
 ###############################################################################
 
-# Heat Map of Homicides by Day of Week for 2016
+# Heat Map of Homicides by Day of Week for 2017
 # Edit the data to get the counts per day
 shootings <- all_crimes %>% filter(Description == "SHOOTING")
 homicides <- all_crimes %>% filter(Description == "HOMICIDE")
@@ -146,7 +144,7 @@ heatmap3 <- ggplot(crime_year,aes(x=year, y=dow, fill=Value)) +
   removeGrid() +
   rotateTextX() + 
   ggtitle("Heat Map of Shootings and Homicides by Weekday in Baltimore, 2017",subtitle = "Using Open Data from Data.BaltimoreCity.Gov") + 
-  labs(x="2016", y="Day of the Week") + 
+  labs(x="2017", y="Day of the Week") + 
   theme(
     plot.title=element_text(hjust=0), 
     axis.ticks=element_blank(),
@@ -156,10 +154,76 @@ heatmap3 <- ggplot(crime_year,aes(x=year, y=dow, fill=Value)) +
     legend.text=element_text(size=6),
     legend.position="right") +
   geom_text(data = crime_year, aes(year,dow,label=Value,fontface="bold"),colour="black",size=2.5) +
-  facet_wrap(~type,nrow =2 )
+  facet_grid(~ type, labeller=labeller(type = labels))
+
+###############################################################################
+homicides4 <- filter(crimes, type == "Homicide")
+homicides4 <- group_by(homicides4, weeks, years, type)
+homicides4 <- dplyr::summarize(homicides4, Value=n())
+
+shootings4 <- filter(crimes, type == "Shooting")
+shootings4 <- group_by(shootings4, weeks, years, type)
+shootings4 <- dplyr::summarize(shootings4, Value=n())
+
+crimes4 <- rbind(homicides4, shootings4)
+
+heatmap4 <- ggplot(crimes4,aes(x=years, y=weeks, fill=Value)) + 
+  geom_tile(color="blue",size=.1) + 
+  scale_fill_gradient(high="Red",low= "Yellow") + 
+  guides(fill=guide_legend(title="Scale")) + 
+  #scale_x_date(date_breaks = "1 week",date_labels="%d-%b-%y") + 
+  theme_minimal(base_size = 10) + 
+  removeGrid() +
+  rotateTextX() + 
+  ggtitle("Heat Map of Shootings and Homicides by Week in Baltimore, 2017",subtitle = "Using Open Data from Data.BaltimoreCity.Gov") + 
+  labs(x="2017", y="Week of the Year") + 
+  theme(
+    plot.title=element_text(hjust=0), 
+    axis.ticks=element_blank(),
+    axis.text=element_text(size=7),
+    axis.text.x = element_blank(),
+    legend.title=element_text(size=8),
+    legend.text=element_text(size=6),
+    legend.position="right") +
+  geom_text(data = crimes4, aes(years,weeks,label=Value,fontface="bold"),colour="black",size=2.5) +
+  facet_grid(~type, labeller = labeller(type = labels) )
+
+plot4 <- ggplot(data = crimes4, aes(x = factor(weeks), y = Value, fill = Value)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Number of Shootings and Homicides per week in 2017 in Baltimore City") +
+  labs(x="Week of the Year", y="Number of Homicides") + 
+  scale_fill_gradient(high="Red",low= "Yellow") + 
+  guides(fill=guide_legend(title="Scale")) + 
+  rotateTextX() +
+  removeGrid() +
+  scale_y_continuous(expand = c(0, 0), 
+                     limits = c(0, 10),
+                     breaks = c(2, 4, 6, 8, 10)) +
+  theme(
+    axis.line =  element_line(color = "black"),
+    axis.text.x = element_text(color = "black", angle = 90, hjust = 1),
+    axis.text.y = element_text(color = "black"),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank()
+  ) +
+  facet_grid(type ~ ., labeller=labeller(type = labels))
+
+plot4
+
+
+###############################################################################
+
+plot4
+
+heatmap4 # Year, Week
 
 heatmap3 # Year, Day
 
 heatmap2 # Year, Month, Day
 
 heatmap # Year, Month, Week, Day
+
+
